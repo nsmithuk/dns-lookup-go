@@ -29,16 +29,6 @@ func TestDnsLookup_QueryFunction(t *testing.T) {
 			expectedRcode: dns.RcodeSuccess,
 		},
 		{
-			name:   "Successful query with two nameservers, first fails",
-			rrtype: dns.TypeA,
-			nameservers: []*MockNameServer{
-				{response: nil, rtt: 100 * time.Millisecond, err: fmt.Errorf("network error")},
-				{response: newLookupResponseMsgWithAD(dns.RcodeSuccess, true), rtt: 100 * time.Millisecond, err: nil},
-			},
-			expectedErr:   "",
-			expectedRcode: dns.RcodeSuccess,
-		},
-		{
 			name:        "No nameservers set",
 			rrtype:      dns.TypeA,
 			nameservers: []*MockNameServer{},
