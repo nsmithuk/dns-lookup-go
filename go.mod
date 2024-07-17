@@ -1,9 +1,8 @@
-module dns-query
+module github.com/nsmithuk/dns-lookup-go
 
 go 1.22
 
 require (
-	github.com/davecgh/go-spew v1.1.1
 	github.com/miekg/dns v1.1.61
 	github.com/nsmithuk/dns-anchors-go v1.0.0
 	github.com/rs/zerolog v1.33.0
@@ -11,6 +10,7 @@ require (
 )
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
