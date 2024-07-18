@@ -1,4 +1,4 @@
-# dns-lookup-go
+# Go DNS Lookup
 
 A high-level API for [github.com/miekg/dns](https://github.com/miekg/dns).
 
@@ -32,6 +32,50 @@ import (
 func main() {
     client := lookup.NewDnsLookup([]lookup.NameServer{
         lookup.NewTlsNameserver("8.8.8.8", "853", "dns.google"),
+    })
+    
+    answers, _, _, err := client.QueryA("nsmith.net")
+    if err != nil {
+		log.Fatalf(err.Error())
+    }
+    
+    fmt.Printf("%d answers found\n", len(answers))
+    for i, answer := range answers {
+        fmt.Printf("answer %d: %s\n", i, answer.String())
+    }
+}
+
+```
+
+## Multiple Nameservers
+
+DNS Lookup supports three types of nameserver connections:
+- Unencrypted UDP
+- Unencrypted TCP
+- Encrypted TLS (DoT)
+
+All three support both IPv4 and IPv6 addresses.
+
+When you set more than one nameserver:
+- If a query fails to resolve on one server, it will be tried against all nameservers, and an error is returned if none succeed.
+- The order in which the servers are selected is randomized per query to help balance load across them.
+
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/nsmithuk/dns-lookup-go/lookup"
+    "log"
+)
+
+func main() {
+    client := lookup.NewDnsLookup([]lookup.NameServer{
+		lookup.NewUdpNameserver("8.8.8.8", "53"),	// Unencrypted UDP example
+		lookup.NewTcpNameserver("8.8.8.8", "53"),	// Unencrypted TCP example
+		lookup.NewTlsNameserver("8.8.8.8", "853", "dns.google"), // Encrypted TCP example
+		lookup.NewTlsNameserver("2001:4860:4860::8888", "853", "dns.google"), // Encrypted TCP example over IPv6
     })
     
     answers, _, _, err := client.QueryA("nsmith.net")
