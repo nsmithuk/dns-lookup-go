@@ -28,7 +28,6 @@ func NewDnsLookup(nameservers []NameServer) *DnsLookup {
 }
 
 func (d *DnsLookup) SetLogger(l zerolog.Logger) {
-	//d.logger = l.With().Str("component", "dns-query").Logger()
 	d.logger = l
 }
 

@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"dns-query/lookup"
 	"fmt"
 	"github.com/nsmithuk/dns-anchors-go/anchors"
+	"github.com/nsmithuk/dns-lookup-go/lookup"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"
@@ -52,7 +52,7 @@ func main() {
 	client.RootDNSSECRecords = anchors
 
 	//---
-	
+
 	answers, msg, _, err := client.QueryA("nsmith.net")
 	if err != nil {
 		log.Fatal().Err(err).Send()
