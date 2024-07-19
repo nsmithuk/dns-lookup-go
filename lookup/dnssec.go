@@ -16,8 +16,10 @@ const (
 
 type contextKey string
 
-const contextDepth contextKey = "depth"
-const initialDomain contextKey = "domain"
+const (
+	contextDepth  contextKey = "depth"  // Context key for recursion depth
+	initialDomain contextKey = "domain" // Context key for the initial domain
+)
 
 // SignatureSets represents a collection of SignatureSet pointers
 type SignatureSets []*SignatureSet
@@ -34,7 +36,7 @@ func newSignatureSets(rrset []dns.RR) (SignatureSets, error) {
 	answers := make([]dns.RR, 0)
 	signatures := make(SignatureSets, 0)
 
-	// Separate RRSIG Records and everything else
+	// Separate RRSIG records from other DNS records
 	for _, answer := range rrset {
 		if signature, ok := answer.(*dns.RRSIG); ok {
 			signatures = append(signatures, &SignatureSet{
@@ -46,7 +48,7 @@ func newSignatureSets(rrset []dns.RR) (SignatureSets, error) {
 		}
 	}
 
-	// Associate all the answers with at least one RRSIG
+	// Associate each DNS record with at least one RRSIG
 	var assigned bool
 	for _, answer := range answers {
 		assigned = false
@@ -54,7 +56,7 @@ func newSignatureSets(rrset []dns.RR) (SignatureSets, error) {
 			assigned = signature.addRR(answer) || assigned
 		}
 
-		// Ensure that each answer is assigned to at least one RRSIG
+		// Return an error if any DNS record is not assigned to a RRSIG
 		if !assigned {
 			return nil, fmt.Errorf("%s was unable to be assigned to any RRSIG", answer.String())
 		}
@@ -105,6 +107,10 @@ func (ss *SignatureSet) addKey(key *dns.DNSKEY, keyType uint16) bool {
 
 // Authenticate verifies the DNSSEC signatures in the DNS response message
 func (d *DnsLookup) Authenticate(msg *dns.Msg, ctx context.Context) error {
+	if msg == nil {
+		return fmt.Errorf("no DNS message provided")
+	}
+
 	// Retrieve the depth from the context, default to 0 if not found
 	depth, ok := ctx.Value(contextDepth).(uint8)
 	if !ok {
@@ -182,7 +188,7 @@ func (d *DnsLookup) Authenticate(msg *dns.Msg, ctx context.Context) error {
 		}
 	}
 
-	return fmt.Errorf("not signature sets found. unable to validate")
+	return fmt.Errorf("no signature sets found, unable to validate")
 }
 
 // authenticateZoneSigningKey authenticates the Zone Signing Key (ZSK) for the given DNS response message
