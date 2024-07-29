@@ -151,7 +151,7 @@ func TestAuthenticateValid(t *testing.T) {
 	d := &DnsLookup{
 		nameservers:              []NameServer{mockNameServer},
 		maxAuthenticationDepth:   3,
-		RequireAuthenticatedData: false,
+		RemotelyAuthenticateData: false,
 		RootDNSSECRecords:        []*dns.DS{rootDs},
 	}
 
@@ -210,7 +210,7 @@ func TestAuthenticateSignatureExpired(t *testing.T) {
 	d := &DnsLookup{
 		nameservers:              []NameServer{mockNameServer},
 		maxAuthenticationDepth:   3,
-		RequireAuthenticatedData: false,
+		RemotelyAuthenticateData: false,
 		RootDNSSECRecords:        []*dns.DS{rootDs},
 	}
 
@@ -269,7 +269,7 @@ func TestAuthenticateSignaturePreInception(t *testing.T) {
 	d := &DnsLookup{
 		nameservers:              []NameServer{mockNameServer},
 		maxAuthenticationDepth:   3,
-		RequireAuthenticatedData: false,
+		RemotelyAuthenticateData: false,
 		RootDNSSECRecords:        []*dns.DS{rootDs},
 	}
 
@@ -327,7 +327,7 @@ func TestAuthenticateSignatureInvalid(t *testing.T) {
 	d := &DnsLookup{
 		nameservers:              []NameServer{mockNameServer},
 		maxAuthenticationDepth:   3,
-		RequireAuthenticatedData: false,
+		RemotelyAuthenticateData: false,
 		RootDNSSECRecords:        []*dns.DS{rootDs},
 	}
 
@@ -384,7 +384,7 @@ func TestAuthenticateSignatureKeyMissMatch(t *testing.T) {
 	d := &DnsLookup{
 		nameservers:              []NameServer{mockNameServer},
 		maxAuthenticationDepth:   3,
-		RequireAuthenticatedData: false,
+		RemotelyAuthenticateData: false,
 		RootDNSSECRecords:        []*dns.DS{rootDs},
 	}
 

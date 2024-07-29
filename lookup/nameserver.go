@@ -25,7 +25,10 @@ type DNSClient interface {
 
 // NameServer interface defines the methods for a DNS name server.
 type NameServer interface {
+	// Query perform the DNS query/lookup.
 	Query(name string, rrtype uint16) (*dns.Msg, time.Duration, error)
+
+	// String returns a human-readable string representation of the NameServer's details.
 	String() string
 }
 

@@ -58,7 +58,7 @@ func TestDnsLookup_QueryFunction(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			lookup := &DnsLookup{
 				nameservers:              make([]NameServer, len(tt.nameservers)),
-				RequireAuthenticatedData: tt.requireAuthenticatedData,
+				RemotelyAuthenticateData: tt.requireAuthenticatedData,
 			}
 
 			for i, ns := range tt.nameservers {

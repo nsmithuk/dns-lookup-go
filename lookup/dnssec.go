@@ -166,10 +166,12 @@ func (d *DnsLookup) Authenticate(msg *dns.Msg, ctx context.Context) error {
 			// Check the parent DS digest
 			logger.Info().Str("zone", kss.signature.SignerName).Msg("Checking parent DS digest")
 
-			answers, dsMsg, _, err := d.QueryDS(kss.signature.SignerName)
+			//answers, dsMsg, _, err := d.QueryDS(kss.signature.SignerName)
+			dsMsg, _, err := d.query(kss.signature.SignerName, dns.TypeDS)
 			if err != nil {
 				return err
 			}
+			answers := extractRecordsOfType[*dns.DS](dsMsg.Answer)
 
 			for _, answer := range answers {
 				keyDS := kss.key.ToDS(answer.DigestType)
@@ -213,14 +215,16 @@ func (d *DnsLookup) authenticateZoneSigningKey(msg *dns.Msg, ctx context.Context
 
 	for _, zss := range zoneSignatureSets {
 		// Request DNSKEY records for the signer name
-		keys, keysMsg, _, err := d.QueryDNSKEY(zss.signature.SignerName)
+		//keys, keysMsg, _, err := d.QueryDNSKEY(zss.signature.SignerName)
+		keysMsg, _, err := d.query(zss.signature.SignerName, dns.TypeDNSKEY)
 		if err != nil {
 			return nil, err
 		}
+		keys := extractRecordsOfType[*dns.DNSKEY](keysMsg.Answer)
 
 		// Add matching Zone Signing Key (ZSK)
 		for _, key := range keys {
-			if zss.addKey(&key, DNSKEY_ZSK) {
+			if zss.addKey(key, DNSKEY_ZSK) {
 				break
 			}
 		}
@@ -249,7 +253,7 @@ func (d *DnsLookup) authenticateZoneSigningKey(msg *dns.Msg, ctx context.Context
 		for _, kss := range keysSignatureSets {
 			// Add matching Key Signing Key (KSK)
 			for _, key := range keys {
-				if kss.addKey(&key, DNSKEY_KSK) {
+				if kss.addKey(key, DNSKEY_KSK) {
 					break
 				}
 			}

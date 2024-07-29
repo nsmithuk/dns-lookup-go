@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/miekg/dns v1.1.61
-	github.com/nsmithuk/dns-anchors-go v1.0.0
+	github.com/nsmithuk/dns-anchors-go v1.1.0
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.9.0
 )

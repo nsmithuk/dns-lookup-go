@@ -1,8 +1,10 @@
 package lookup
 
 import (
+	"context"
 	"fmt"
 	"github.com/miekg/dns"
+	"github.com/nsmithuk/dns-anchors-go/anchors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"io"
@@ -14,7 +16,8 @@ type DnsLookup struct {
 	logger                   zerolog.Logger
 	nameservers              []NameServer
 	RootDNSSECRecords        []*dns.DS
-	RequireAuthenticatedData bool
+	LocallyAuthenticateData  bool
+	RemotelyAuthenticateData bool
 	maxAuthenticationDepth   uint8
 }
 
@@ -22,8 +25,10 @@ func NewDnsLookup(nameservers []NameServer) *DnsLookup {
 	return &DnsLookup{
 		logger:                   zerolog.New(io.Discard),
 		nameservers:              nameservers,
-		RequireAuthenticatedData: true,
+		LocallyAuthenticateData:  true,
+		RemotelyAuthenticateData: true,
 		maxAuthenticationDepth:   10,
+		RootDNSSECRecords:        anchors.GetAllFromEmbedded(),
 	}
 }
 
@@ -41,6 +46,20 @@ func (d *DnsLookup) getNameservers() []NameServer {
 }
 
 func (d *DnsLookup) Query(name string, rrtype uint16) (*dns.Msg, time.Duration, error) {
+	msg, latency, err := d.query(name, rrtype)
+	if err != nil {
+		return nil, latency, err
+	}
+	if d.LocallyAuthenticateData {
+		err = d.Authenticate(msg, context.Background())
+		if err != nil {
+			return nil, latency, err
+		}
+	}
+	return msg, latency, err
+}
+
+func (d *DnsLookup) query(name string, rrtype uint16) (*dns.Msg, time.Duration, error) {
 	nameservers := d.getNameservers()
 
 	if len(nameservers) < 1 {
@@ -68,7 +87,7 @@ func (d *DnsLookup) Query(name string, rrtype uint16) (*dns.Msg, time.Duration, 
 
 		//---
 
-		if d.RequireAuthenticatedData && !result.AuthenticatedData {
+		if d.RemotelyAuthenticateData && !result.AuthenticatedData {
 			logger.Error().Dur("latency", duration).Str("nameserver", nameserver.String()).
 				Msg("Resolver dnssec authentication failed")
 			return nil, totalDuration, fmt.Errorf("resolver dnssec authentication failed")
@@ -89,6 +108,8 @@ func (d *DnsLookup) Query(name string, rrtype uint16) (*dns.Msg, time.Duration, 
 				Msg("Answer to query found")
 		}
 
+		//---
+
 		return result, totalDuration, err
 	}
 
@@ -98,4 +119,17 @@ func (d *DnsLookup) Query(name string, rrtype uint16) (*dns.Msg, time.Duration, 
 	logger.Warn().Dur("latency", totalDuration).Msg("No answer found on any configured nameserver")
 
 	return nil, totalDuration, err
+}
+
+//-----
+
+// extractRecordsOfType Given a slice of RR, returns all instances within it of type T, cast to type T.
+func extractRecordsOfType[T dns.RR](rr []dns.RR) []T {
+	var result []T
+	for _, record := range rr {
+		if typedRecord, ok := record.(T); ok {
+			result = append(result, typedRecord)
+		}
+	}
+	return result
 }

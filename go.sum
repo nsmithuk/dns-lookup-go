@@ -10,8 +10,8 @@ github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWE
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/miekg/dns v1.1.61 h1:nLxbwF3XxhwVSm8g9Dghm9MHPaUZuqhPiGL+675ZmEs=
 github.com/miekg/dns v1.1.61/go.mod h1:mnAarhS3nWaW+NVP2wTkYVIZyHNJ098SJZUki3eykwQ=
-github.com/nsmithuk/dns-anchors-go v1.0.0 h1:0sU3RMHqo+VW9Gh94M+nZ0bVAn+Q/rm6VY7xD2ZGX98=
-github.com/nsmithuk/dns-anchors-go v1.0.0/go.mod h1:vbKJ8CILiXY5PIcdA4kVj12k5nfaR7oEqMQd5b1jgxY=
+github.com/nsmithuk/dns-anchors-go v1.1.0 h1:Pj7T3y7852HcFZWUWahxcylMMKJPAgmnbKCMTQFDFxI=
+github.com/nsmithuk/dns-anchors-go v1.1.0/go.mod h1:CFqDFmyGZbc13VTAAjjaEq6KROxCqomMsI6IoTgh7co=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
