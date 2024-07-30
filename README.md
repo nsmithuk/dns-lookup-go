@@ -136,7 +136,7 @@ func main() {
     
     records, err := anchors.GetAllFromFile("root-anchors.xml")
     if err != nil {
-    // Failed to load or parse the root anchors.
+        // Failed to load or parse the root anchors.
         log.Fatalln(err)
     }
     
@@ -146,7 +146,7 @@ func main() {
     
     answers, err := client.QueryA("nsmith.net")
     if err != nil {
-    // If DNSSEC validation fails, an error is returned.
+        // If DNSSEC validation fails, an error is returned.
         log.Fatalln(err)
     }
     
