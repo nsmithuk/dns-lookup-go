@@ -17,6 +17,7 @@ const (
 type contextKey string
 
 const (
+	contextTrace  contextKey = "trace"  // Context key for recursion depth
 	contextDepth  contextKey = "depth"  // Context key for recursion depth
 	initialDomain contextKey = "domain" // Context key for the initial domain
 )
@@ -24,19 +25,19 @@ const (
 // SignatureSets represents a collection of SignatureSet pointers
 type SignatureSets []*SignatureSet
 
-// SignatureSet represents a set of DNS records along with their corresponding RRSIG and DNSKEY
+// SignatureSet represents a set of DNS Records along with their corresponding RRSIG and DNSKEY
 type SignatureSet struct {
 	key       *dns.DNSKEY // DNSKEY used to validate the signature
 	signature *dns.RRSIG  // RRSIG record
 	records   []dns.RR    // DNS records covered by the RRSIG
 }
 
-// newSignatureSets creates and initializes SignatureSets from a given set of DNS records
+// newSignatureSets creates and initializes SignatureSets from a given set of DNS Records
 func newSignatureSets(rrset []dns.RR) (SignatureSets, error) {
 	answers := make([]dns.RR, 0)
 	signatures := make(SignatureSets, 0)
 
-	// Separate RRSIG records from other DNS records
+	// Separate RRSIG Records from other DNS Records
 	for _, answer := range rrset {
 		if signature, ok := answer.(*dns.RRSIG); ok {
 			signatures = append(signatures, &SignatureSet{
@@ -156,6 +157,9 @@ func (d *DnsLookup) Authenticate(msg *dns.Msg, ctx context.Context) error {
 					logger.Info().
 						Str("digest", answer.Digest).
 						Msg("Key Signing Key authenticated at root.")
+					if trace, ok := ctx.Value(contextTrace).(*Trace); ok {
+						trace.Add(newTraceDelegationSignerCheck(depth, msg.Question[0].Name, kss.signature.SignerName, keyDS.Digest))
+					}
 					return nil
 				}
 			}
@@ -167,7 +171,7 @@ func (d *DnsLookup) Authenticate(msg *dns.Msg, ctx context.Context) error {
 			logger.Info().Str("zone", kss.signature.SignerName).Msg("Checking parent DS digest")
 
 			//answers, dsMsg, _, err := d.QueryDS(kss.signature.SignerName)
-			dsMsg, _, err := d.query(kss.signature.SignerName, dns.TypeDS)
+			dsMsg, _, err := d.query(kss.signature.SignerName, dns.TypeDS, ctx)
 			if err != nil {
 				return err
 			}
@@ -176,11 +180,15 @@ func (d *DnsLookup) Authenticate(msg *dns.Msg, ctx context.Context) error {
 			for _, answer := range answers {
 				keyDS := kss.key.ToDS(answer.DigestType)
 				// Case-insensitive string match for DS digest
+				// TODO: Check Algorithm matches between DS and DNSKEY.
 				if answer.KeyTag == keyDS.KeyTag && strings.EqualFold(answer.Digest, keyDS.Digest) {
 					logger.Info().
 						Str("digest", answer.Digest).
 						Str("zone", kss.signature.SignerName).
 						Msg("Key Signing Key authenticated at parent. Next authenticating parent's zone.")
+					if trace, ok := ctx.Value(contextTrace).(*Trace); ok {
+						trace.Add(newTraceDelegationSignerCheck(depth, msg.Question[0].Name, kss.signature.SignerName, keyDS.Digest))
+					}
 					return d.Authenticate(dsMsg, context.WithValue(ctx, contextDepth, depth+1))
 				}
 			}
@@ -214,9 +222,9 @@ func (d *DnsLookup) authenticateZoneSigningKey(msg *dns.Msg, ctx context.Context
 	logger.Info().Int("number-of-signatures", len(zoneSignatureSets)).Msg("Authenticating zone's ZSK and KSK")
 
 	for _, zss := range zoneSignatureSets {
-		// Request DNSKEY records for the signer name
+		// Request DNSKEY Records for the signer name
 		//keys, keysMsg, _, err := d.QueryDNSKEY(zss.signature.SignerName)
-		keysMsg, _, err := d.query(zss.signature.SignerName, dns.TypeDNSKEY)
+		keysMsg, _, err := d.query(zss.signature.SignerName, dns.TypeDNSKEY, ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -234,6 +242,13 @@ func (d *DnsLookup) authenticateZoneSigningKey(msg *dns.Msg, ctx context.Context
 
 		// Verify the signature with the ZSK
 		err = zss.verify()
+
+		if trace, ok := ctx.Value(contextTrace).(*Trace); ok {
+			trace.Add(
+				newTraceSignatureValidation(depth, msg.Question[0].Name, zss.signature.SignerName, "zsk", zss.key, zss.signature, zss.records, err),
+			)
+		}
+
 		if err != nil {
 			return nil, fmt.Errorf("unable to verify %s; received %s", zss.signature.String(), err.Error())
 		}
@@ -264,6 +279,13 @@ func (d *DnsLookup) authenticateZoneSigningKey(msg *dns.Msg, ctx context.Context
 
 			// Verify the signature with the KSK
 			err = kss.verify()
+
+			if trace, ok := ctx.Value(contextTrace).(*Trace); ok {
+				trace.Add(
+					newTraceSignatureValidation(depth, msg.Question[0].Name, kss.signature.SignerName, "ksk", kss.key, kss.signature, kss.records, err),
+				)
+			}
+
 			if err != nil {
 				return nil, fmt.Errorf("unable to verify %s; received %s", tabsToSpaces(kss.signature.String()), err.Error())
 			}

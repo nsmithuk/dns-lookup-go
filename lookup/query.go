@@ -18,7 +18,10 @@ type DnsLookup struct {
 	RootDNSSECRecords        []*dns.DS
 	LocallyAuthenticateData  bool
 	RemotelyAuthenticateData bool
+	RandomNameserver         bool
 	maxAuthenticationDepth   uint8
+	Trace                    *Trace
+	EnableTrace              bool
 }
 
 func NewDnsLookup(nameservers []NameServer) *DnsLookup {
@@ -27,8 +30,10 @@ func NewDnsLookup(nameservers []NameServer) *DnsLookup {
 		nameservers:              nameservers,
 		LocallyAuthenticateData:  true,
 		RemotelyAuthenticateData: true,
+		RandomNameserver:         true,
 		maxAuthenticationDepth:   10,
 		RootDNSSECRecords:        anchors.GetAllFromEmbedded(),
+		EnableTrace:              false,
 	}
 }
 
@@ -37,7 +42,7 @@ func (d *DnsLookup) SetLogger(l zerolog.Logger) {
 }
 
 func (d *DnsLookup) getNameservers() []NameServer {
-	if len(d.nameservers) > 1 {
+	if d.RandomNameserver && len(d.nameservers) > 1 {
 		rand.Shuffle(len(d.nameservers), func(i, j int) {
 			d.nameservers[i], d.nameservers[j] = d.nameservers[j], d.nameservers[i]
 		})
@@ -46,20 +51,29 @@ func (d *DnsLookup) getNameservers() []NameServer {
 }
 
 func (d *DnsLookup) Query(name string, rrtype uint16) (*dns.Msg, time.Duration, error) {
-	msg, latency, err := d.query(name, rrtype)
+	ctx := context.Background()
+
+	if d.EnableTrace {
+		d.Trace = new(Trace)
+		ctx = context.WithValue(ctx, contextTrace, d.Trace)
+	}
+
+	msg, latency, err := d.query(name, rrtype, ctx)
 	if err != nil {
 		return nil, latency, err
 	}
+
 	if d.LocallyAuthenticateData {
-		err = d.Authenticate(msg, context.Background())
+		err = d.Authenticate(msg, ctx)
 		if err != nil {
 			return nil, latency, err
 		}
 	}
+
 	return msg, latency, err
 }
 
-func (d *DnsLookup) query(name string, rrtype uint16) (*dns.Msg, time.Duration, error) {
+func (d *DnsLookup) query(name string, rrtype uint16, ctx context.Context) (*dns.Msg, time.Duration, error) {
 	nameservers := d.getNameservers()
 
 	if len(nameservers) < 1 {
@@ -109,6 +123,12 @@ func (d *DnsLookup) query(name string, rrtype uint16) (*dns.Msg, time.Duration, 
 		}
 
 		//---
+
+		if trace, ok := ctx.Value(contextTrace).(*Trace); ok {
+			trace.Add(newtTraceLookup(name, rrtype, nameserver.String(), duration, result.Answer))
+		}
+
+		//--
 
 		return result, totalDuration, err
 	}
