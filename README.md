@@ -2,12 +2,25 @@
 
 A high-level API for [github.com/miekg/dns](https://github.com/miekg/dns).
 
-DNS Lookup provides a simple Go based interface for performing DNS lookups against resolving nameservers, with support for DNSSEC validation.
+DNS Lookup provides a simple Go based interface for performing DNS lookups against resolving nameservers, with local DNSSEC validation.
 
-## Features
-- Simple DNS lookup interface
-- Resolver-based DNSSEC validation
-- Local DNSSEC validation (experimental)
+## Local DNSSEC Validation (Experimental)
+
+DNS Lookup supports validating the DNSSEC trust chain locally, within Go.
+
+This will take the full message response from your query and walk the DNS hierarchy, down to the root,
+verifying the signatures of each domain label, and that the keys used to generate those signatures are verified
+in the appropriate Delegation Signer (DS) records.
+
+By default, the embedded trust anchors from [nsmithuk/dns-anchors-go](https://github.com/nsmithuk/dns-anchors-go) are used. 
+Feel free to use these for convenience, however if you're serious about performing your own validation it is recommended to acquire and validate the root anchors independently to ensure trust in its content.
+Use the included copy at your own risk.
+
+You can download the `root-anchors.xml` file from [IANA DNSSEC files](https://www.iana.org/dnssec/files).
+An example copy of root-anchors.xml is included in this repository. However, it is recommended to acquire and validate
+this file independently to ensure trust in its content. Use the included copy at your own risk.
+
+See [Supplying the Trust Anchors](#supplying-the-trust-anchors) below for details on how to use your own copy.
 
 ## Installation
 
@@ -78,7 +91,7 @@ func main() {
 
     client := lookup.NewDnsLookup([]lookup.NameServer{
         lookup.NewUdpNameserver("1.1.1.1", "53"), // Unencrypted UDP example
-        lookup.NewTcpNameserver("1.1.1.1", "53"),	// Unencrypted TCP example
+        lookup.NewTcpNameserver("1.1.1.1", "53"), // Unencrypted TCP example
         lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"), // Encrypted TCP example
         lookup.NewTlsNameserver("2606:4700:4700::1111", "853", "one.one.one.one"), // Encrypted TCP example over IPv6
     })
@@ -99,17 +112,52 @@ func main() {
 }
 ```
 
-## Local DNSSEC Validation (Experimental)
+## Supplying the Trust Anchors
 
-DNS Lookup supports validating the DNSSEC trust chain locally within Go.
+To supply your own copy of the trust anchors.
 
-This will take the full message response from your query and walk the DNS hierarchy, down to the root, 
-verifying the signatures of each domain label, and that the keys used to generate those signatures are verified 
-in the appropriate Delegation Signer (DS) records. The root DS records must be provided manually, as discussed below.
+```go
+package main
 
-You should acquire and validate the `root-anchors.xml` file from [IANA DNSSEC files](https://www.iana.org/dnssec/files).
-An example copy of root-anchors.xml is included in this repository. However, it is recommended to acquire and validate 
-this file independently to ensure trust in its content. Use the included copy at your own risk.
+import (
+    "fmt"
+    "github.com/nsmithuk/dns-anchors-go/anchors"
+    "github.com/nsmithuk/dns-lookup-go/lookup"
+    "log"
+)
+
+func main() {
+
+    client := lookup.NewDnsLookup([]lookup.NameServer{
+        lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
+    })
+    
+    //---
+    
+    records, err := anchors.GetAllFromFile("root-anchors.xml")
+    if err != nil {
+    // Failed to load or parse the root anchors.
+        log.Fatalln(err)
+    }
+    
+    client.RootDNSSECRecords = records
+    
+    //---
+    
+    answers, err := client.QueryA("nsmith.net")
+    if err != nil {
+    // If DNSSEC validation fails, an error is returned.
+        log.Fatalln(err)
+    }
+    
+    fmt.Printf("%d answers found\n", len(answers))
+    for i, answer := range answers {
+        fmt.Printf("answer %d: %s\n", i, answer.String())
+    }
+
+}
+
+```
 
 ## License
 
