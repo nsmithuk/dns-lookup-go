@@ -37,14 +37,6 @@ func newtTraceLookup(domain string, rrtype uint16, nameserver string, latency ti
 	}
 }
 
-//func (r TraceLookup) String() string {
-//	result := fmt.Sprintf("DNS Lookup for [%s] %s @%s took %s and returned %d answers:", r.Domain, r.Rrtype, r.Nameserver, r.Latency, len(r.Answers))
-//	for _, r := range r.Answers {
-//		result += fmt.Sprintf("\n   [%s]", r)
-//	}
-//	return result
-//}
-
 //---
 
 type TraceSignatureValidation struct {
@@ -54,6 +46,7 @@ type TraceSignatureValidation struct {
 	Zone      string
 	Key       string
 	KeySha256 string
+	Algorithm string
 	Signature string
 	Records   []string
 	Err       error
@@ -68,24 +61,13 @@ func newTraceSignatureValidation(depth uint8, domain, zone, keyType string, key 
 		KeyType:   keyType,
 		Key:       tabsToSpaces(key.String()),
 		KeySha256: key.ToDS(dns.SHA256).Digest,
+		Algorithm: algorithmToString(key.Algorithm),
 		Signature: tabsToSpaces(signature.String()),
 		Records:   rrsetToStrings(records),
 		Err:       err,
 		Valid:     err == nil,
 	}
 }
-
-//func (r TraceSignatureValidation) String() string {
-//	validation := "passed"
-//	if !r.Valid {
-//		validation = "failed"
-//	}
-//	result := fmt.Sprintf("Signature validation %s for Key [%s] with Signature [%s] for records:", validation, r.Key, r.Signature)
-//	for _, r := range r.Records {
-//		result += fmt.Sprintf("\n   [%s]", r)
-//	}
-//	return result
-//}
 
 //---
 
@@ -104,7 +86,3 @@ func newTraceDelegationSignerCheck(depth uint8, child, parent, hash string) Trac
 		Hash:   strings.ToLower(hash),
 	}
 }
-
-//func (r TraceDelegationSignerCheck) String() string {
-//	return ""
-//}

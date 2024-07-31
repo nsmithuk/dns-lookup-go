@@ -49,6 +49,10 @@ func newSignatureSets(rrset []dns.RR) (SignatureSets, error) {
 		}
 	}
 
+	if len(signatures) == 0 {
+		return nil, fmt.Errorf("no RRSIG records found. this might indicate that DNSSEC is not enabled for this domain, or that the nameserver used does not return RRSIG records")
+	}
+
 	// Associate each DNS record with at least one RRSIG
 	var assigned bool
 	for _, answer := range answers {
@@ -59,7 +63,7 @@ func newSignatureSets(rrset []dns.RR) (SignatureSets, error) {
 
 		// Return an error if any DNS record is not assigned to a RRSIG
 		if !assigned {
-			return nil, fmt.Errorf("%s was unable to be assigned to any RRSIG", answer.String())
+			return nil, fmt.Errorf("[%s] was unable to be assigned to any RRSIG", answer.String())
 		}
 	}
 

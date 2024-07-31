@@ -29,6 +29,33 @@ var dnsRecordTypes = map[uint16]string{
 	257: "CAA",
 }
 
+var dnsAlgorithms = map[uint8]string{
+	1:   "RSAMD5",
+	2:   "DH",
+	3:   "DSA",
+	5:   "RSASHA1",
+	6:   "DSA-NSEC3-SHA1",
+	7:   "RSASHA1-NSEC3-SHA1",
+	8:   "RSA SHA256",
+	10:  "RSA SHA512",
+	12:  "ECC-GOST",
+	13:  "ECDSA P256 SHA256",
+	14:  "ECDSA P384 SHA384",
+	15:  "ED25519",
+	16:  "ED448",
+	252: "Indirect",
+	253: "PrivateDNS",
+	254: "PrivateOID",
+}
+
+func algorithmToString(algorithm uint8) string {
+	if name, ok := dnsAlgorithms[algorithm]; ok {
+		return name
+	} else {
+		return "unknown"
+	}
+}
+
 // rrtypeToString returns a string representation of a given rrtype integer.
 func rrtypeToString(rrtype uint16) string {
 	if name, ok := dnsRecordTypes[rrtype]; ok {
