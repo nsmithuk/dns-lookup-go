@@ -30,10 +30,10 @@ var dnsRecordTypes = map[uint16]string{
 }
 
 var dnsAlgorithms = map[uint8]string{
-	1:   "RSAMD5",
+	1:   "RSA MD5",
 	2:   "DH",
 	3:   "DSA",
-	5:   "RSASHA1",
+	5:   "RSA SHA1",
 	6:   "DSA-NSEC3-SHA1",
 	7:   "RSASHA1-NSEC3-SHA1",
 	8:   "RSA SHA256",

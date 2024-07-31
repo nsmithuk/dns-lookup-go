@@ -184,7 +184,6 @@ func (d *DnsLookup) Authenticate(msg *dns.Msg, ctx context.Context) error {
 			for _, answer := range answers {
 				keyDS := kss.key.ToDS(answer.DigestType)
 				// Case-insensitive string match for DS digest
-				// TODO: Check Algorithm matches between DS and DNSKEY.
 				if answer.KeyTag == keyDS.KeyTag && answer.Algorithm == keyDS.Algorithm && strings.EqualFold(answer.Digest, keyDS.Digest) {
 					logger.Info().
 						Str("digest", answer.Digest).
