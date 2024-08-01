@@ -14,7 +14,7 @@ func TestDnsLookup_QueryFunction(t *testing.T) {
 	tests := []struct {
 		name                     string
 		rrtype                   uint16
-		nameservers              []*MockNameServer
+		nameservers              []*OriginalMockNameServer
 		requireAuthenticatedData bool
 		expectedErr              string
 		expectedRcode            int
@@ -22,7 +22,7 @@ func TestDnsLookup_QueryFunction(t *testing.T) {
 		{
 			name:   "Successful query with one nameserver",
 			rrtype: dns.TypeA,
-			nameservers: []*MockNameServer{
+			nameservers: []*OriginalMockNameServer{
 				{response: newLookupResponseMsgWithAD(dns.RcodeSuccess, true), rtt: 100 * time.Millisecond, err: nil},
 			},
 			expectedErr:   "",
@@ -31,13 +31,13 @@ func TestDnsLookup_QueryFunction(t *testing.T) {
 		{
 			name:        "No nameservers set",
 			rrtype:      dns.TypeA,
-			nameservers: []*MockNameServer{},
+			nameservers: []*OriginalMockNameServer{},
 			expectedErr: "no nameservers set",
 		},
 		{
 			name:   "All nameservers return an error",
 			rrtype: dns.TypeA,
-			nameservers: []*MockNameServer{
+			nameservers: []*OriginalMockNameServer{
 				{response: nil, rtt: 100 * time.Millisecond, err: fmt.Errorf("network error")},
 				{response: nil, rtt: 100 * time.Millisecond, err: fmt.Errorf("another network error")},
 			},
@@ -46,7 +46,7 @@ func TestDnsLookup_QueryFunction(t *testing.T) {
 		{
 			name:   "Require authenticated data but not provided",
 			rrtype: dns.TypeA,
-			nameservers: []*MockNameServer{
+			nameservers: []*OriginalMockNameServer{
 				{response: newLookupResponseMsgWithAD(dns.RcodeSuccess, false), rtt: 100 * time.Millisecond, err: nil},
 			},
 			requireAuthenticatedData: true,
