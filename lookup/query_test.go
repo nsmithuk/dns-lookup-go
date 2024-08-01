@@ -2,6 +2,7 @@ package lookup
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/mock"
 	"net"
 	"testing"
 	"time"
@@ -9,6 +10,26 @@ import (
 	"github.com/miekg/dns"
 	"github.com/stretchr/testify/assert"
 )
+
+// OriginalMockNameServer represents a mock implementation of the NameServer interface.
+type OriginalMockNameServer struct {
+	mock.Mock
+	response *dns.Msg
+	rtt      time.Duration
+	err      error
+}
+
+func (m *OriginalMockNameServer) Query(name string, rrtype uint16) (*dns.Msg, time.Duration, error) {
+	args := m.Called(name, rrtype)
+	if m.response != nil {
+		return m.response, m.rtt, m.err
+	}
+	return args.Get(0).(*dns.Msg), args.Get(1).(time.Duration), args.Error(2)
+}
+
+func (m *OriginalMockNameServer) String() string {
+	return "mock-nameserver"
+}
 
 func TestDnsLookup_QueryFunction(t *testing.T) {
 	tests := []struct {
