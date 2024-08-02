@@ -134,7 +134,7 @@ func main() {
     
     //---
     
-    records, err := anchors.GetAllFromFile("root-anchors.xml")
+    records, err := anchors.GetValidFromFile("root-anchors.xml")
     if err != nil {
         // Failed to load or parse the root anchors.
         log.Fatalln(err)
