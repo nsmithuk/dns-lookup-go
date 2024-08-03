@@ -2,16 +2,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/nsmithuk/dns-lookup-go/lookup"
+	"github.com/nsmithuk/dns-lookup-go/resolver"
 	"log"
 )
 
 func main() {
 
-	client := lookup.NewDnsLookup([]lookup.NameServer{
+	client := resolver.NewResolver([]resolver.NameServer{
 		//lookup.NewUdpNameserver("1.1.1.1", "53"), // Unencrypted UDP example
 		//lookup.NewTcpNameserver("1.1.1.1", "53"),	// Unencrypted TCP example
-		lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
+		resolver.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
 		//lookup.NewTlsNameserver("2606:4700:4700::1111", "853", "one.one.one.one"),
 	})
 

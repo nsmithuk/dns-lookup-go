@@ -1,4 +1,4 @@
-package lookup
+package resolver
 
 import (
 	"fmt"
@@ -77,7 +77,7 @@ func TestDnsLookup_QueryFunction(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			lookup := &DnsLookup{
+			lookup := &Resolver{
 				nameservers:              make([]NameServer, len(tt.nameservers)),
 				RemotelyAuthenticateData: tt.requireAuthenticatedData,
 			}

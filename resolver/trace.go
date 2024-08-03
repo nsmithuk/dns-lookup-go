@@ -1,4 +1,4 @@
-package lookup
+package resolver
 
 import (
 	"github.com/miekg/dns"

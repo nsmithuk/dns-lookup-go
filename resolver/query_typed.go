@@ -1,4 +1,4 @@
-package lookup
+package resolver
 
 import (
 	"github.com/miekg/dns"
@@ -7,7 +7,7 @@ import (
 // Not DRY, but easy to auto-generate, and means we have some nice strong typing for everything.
 
 // QueryA performs a DNS query for A records
-func (d *DnsLookup) QueryA(name string) ([]*dns.A, error) {
+func (d *Resolver) QueryA(name string) ([]*dns.A, error) {
 	msg, _, err := d.Query(name, dns.TypeA)
 	if err != nil {
 		return nil, err
@@ -16,7 +16,7 @@ func (d *DnsLookup) QueryA(name string) ([]*dns.A, error) {
 }
 
 // QueryAAAA performs a DNS query for AAAA records
-func (d *DnsLookup) QueryAAAA(name string) ([]*dns.AAAA, error) {
+func (d *Resolver) QueryAAAA(name string) ([]*dns.AAAA, error) {
 	msg, _, err := d.Query(name, dns.TypeAAAA)
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func (d *DnsLookup) QueryAAAA(name string) ([]*dns.AAAA, error) {
 }
 
 // QueryCNAME performs a DNS query for CNAME records
-func (d *DnsLookup) QueryCNAME(name string) ([]*dns.CNAME, error) {
+func (d *Resolver) QueryCNAME(name string) ([]*dns.CNAME, error) {
 	msg, _, err := d.Query(name, dns.TypeCNAME)
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (d *DnsLookup) QueryCNAME(name string) ([]*dns.CNAME, error) {
 }
 
 // QueryMX performs a DNS query for MX records
-func (d *DnsLookup) QueryMX(name string) ([]*dns.MX, error) {
+func (d *Resolver) QueryMX(name string) ([]*dns.MX, error) {
 	msg, _, err := d.Query(name, dns.TypeMX)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (d *DnsLookup) QueryMX(name string) ([]*dns.MX, error) {
 }
 
 // QueryNS performs a DNS query for NS records
-func (d *DnsLookup) QueryNS(name string) ([]*dns.NS, error) {
+func (d *Resolver) QueryNS(name string) ([]*dns.NS, error) {
 	msg, _, err := d.Query(name, dns.TypeNS)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (d *DnsLookup) QueryNS(name string) ([]*dns.NS, error) {
 }
 
 // QueryPTR performs a DNS query for PTR records
-func (d *DnsLookup) QueryPTR(name string) ([]*dns.PTR, error) {
+func (d *Resolver) QueryPTR(name string) ([]*dns.PTR, error) {
 	msg, _, err := d.Query(name, dns.TypePTR)
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (d *DnsLookup) QueryPTR(name string) ([]*dns.PTR, error) {
 }
 
 // QuerySOA performs a DNS query for SOA records
-func (d *DnsLookup) QuerySOA(name string) ([]*dns.SOA, error) {
+func (d *Resolver) QuerySOA(name string) ([]*dns.SOA, error) {
 	msg, _, err := d.Query(name, dns.TypeSOA)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (d *DnsLookup) QuerySOA(name string) ([]*dns.SOA, error) {
 }
 
 // QuerySRV performs a DNS query for SRV records
-func (d *DnsLookup) QuerySRV(name string) ([]*dns.SRV, error) {
+func (d *Resolver) QuerySRV(name string) ([]*dns.SRV, error) {
 	msg, _, err := d.Query(name, dns.TypeSRV)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func (d *DnsLookup) QuerySRV(name string) ([]*dns.SRV, error) {
 }
 
 // QueryTXT performs a DNS query for TXT records
-func (d *DnsLookup) QueryTXT(name string) ([]*dns.TXT, error) {
+func (d *Resolver) QueryTXT(name string) ([]*dns.TXT, error) {
 	msg, _, err := d.Query(name, dns.TypeTXT)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (d *DnsLookup) QueryTXT(name string) ([]*dns.TXT, error) {
 }
 
 // QueryDS performs a DNS query for DS records
-func (d *DnsLookup) QueryDS(name string) ([]*dns.DS, error) {
+func (d *Resolver) QueryDS(name string) ([]*dns.DS, error) {
 	msg, _, err := d.Query(name, dns.TypeDS)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (d *DnsLookup) QueryDS(name string) ([]*dns.DS, error) {
 }
 
 // QueryDNSKEY performs a DNS query for DNSKEY records
-func (d *DnsLookup) QueryDNSKEY(name string) ([]*dns.DNSKEY, error) {
+func (d *Resolver) QueryDNSKEY(name string) ([]*dns.DNSKEY, error) {
 	msg, _, err := d.Query(name, dns.TypeDNSKEY)
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func (d *DnsLookup) QueryDNSKEY(name string) ([]*dns.DNSKEY, error) {
 }
 
 // QueryANY performs a DNS query for ANY records
-func (d *DnsLookup) QueryANY(name string) ([]dns.RR, error) {
+func (d *Resolver) QueryANY(name string) ([]dns.RR, error) {
 	msg, _, err := d.Query(name, dns.TypeANY)
 	if err != nil {
 		return nil, err

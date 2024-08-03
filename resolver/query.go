@@ -1,4 +1,4 @@
-package lookup
+package resolver
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-type DnsLookup struct {
+type Resolver struct {
 	logger                   zerolog.Logger
 	nameservers              []NameServer
 	RootDNSSECRecords        []*dns.DS
@@ -24,8 +24,8 @@ type DnsLookup struct {
 	EnableTrace              bool
 }
 
-func NewDnsLookup(nameservers []NameServer) *DnsLookup {
-	return &DnsLookup{
+func NewResolver(nameservers []NameServer) *Resolver {
+	return &Resolver{
 		logger:                   zerolog.New(io.Discard),
 		nameservers:              nameservers,
 		LocallyAuthenticateData:  true,
@@ -37,11 +37,7 @@ func NewDnsLookup(nameservers []NameServer) *DnsLookup {
 	}
 }
 
-func (d *DnsLookup) SetLogger(l zerolog.Logger) {
-	d.logger = l
-}
-
-func (d *DnsLookup) getNameservers() []NameServer {
+func (d *Resolver) getNameservers() []NameServer {
 	if d.RandomNameserver && len(d.nameservers) > 1 {
 		rand.Shuffle(len(d.nameservers), func(i, j int) {
 			d.nameservers[i], d.nameservers[j] = d.nameservers[j], d.nameservers[i]
@@ -50,7 +46,7 @@ func (d *DnsLookup) getNameservers() []NameServer {
 	return d.nameservers
 }
 
-func (d *DnsLookup) Query(name string, rrtype uint16) (*dns.Msg, time.Duration, error) {
+func (d *Resolver) Query(name string, rrtype uint16) (*dns.Msg, time.Duration, error) {
 	ctx := context.Background()
 
 	if d.EnableTrace {
@@ -73,7 +69,7 @@ func (d *DnsLookup) Query(name string, rrtype uint16) (*dns.Msg, time.Duration, 
 	return msg, latency, err
 }
 
-func (d *DnsLookup) query(name string, rrtype uint16, ctx context.Context) (*dns.Msg, time.Duration, error) {
+func (d *Resolver) query(name string, rrtype uint16, ctx context.Context) (*dns.Msg, time.Duration, error) {
 	nameservers := d.getNameservers()
 
 	if len(nameservers) < 1 {

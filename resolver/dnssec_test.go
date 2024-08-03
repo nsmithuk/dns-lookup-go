@@ -1,4 +1,4 @@
-package lookup
+package resolver
 
 import (
 	"github.com/miekg/dns"
@@ -10,7 +10,7 @@ import (
 func TestAuthenticateValid(t *testing.T) {
 	ns := new(mockNameServer).buildFullChain().prepFullChain()
 
-	d := &DnsLookup{
+	d := &Resolver{
 		nameservers:              []NameServer{ns},
 		maxAuthenticationDepth:   3,
 		RemotelyAuthenticateData: false,
@@ -28,7 +28,7 @@ func TestAuthenticateValid(t *testing.T) {
 func TestAuthenticateFailMaxDepth(t *testing.T) {
 	ns := new(mockNameServer).buildFullChain().prepFullChain()
 
-	d := &DnsLookup{
+	d := &Resolver{
 		nameservers:              []NameServer{ns},
 		maxAuthenticationDepth:   2,
 		RemotelyAuthenticateData: false,
@@ -58,7 +58,7 @@ func TestAuthenticateSignatureExpired(t *testing.T) {
 
 	ns.prepFullChain()
 
-	d := &DnsLookup{
+	d := &Resolver{
 		nameservers:              []NameServer{ns},
 		maxAuthenticationDepth:   3,
 		RemotelyAuthenticateData: false,
@@ -90,7 +90,7 @@ func TestAuthenticateSignaturePreInception(t *testing.T) {
 
 	ns.prepFullChain()
 
-	d := &DnsLookup{
+	d := &Resolver{
 		nameservers:              []NameServer{ns},
 		maxAuthenticationDepth:   3,
 		RemotelyAuthenticateData: false,
@@ -120,7 +120,7 @@ func TestAuthenticateSignatureInvalid(t *testing.T) {
 
 	ns.prepFullChain()
 
-	d := &DnsLookup{
+	d := &Resolver{
 		nameservers:              []NameServer{ns},
 		maxAuthenticationDepth:   3,
 		RemotelyAuthenticateData: false,
@@ -150,7 +150,7 @@ func TestAuthenticateSignatureNoRRSig(t *testing.T) {
 
 	ns.prepFullChain()
 
-	d := &DnsLookup{
+	d := &Resolver{
 		nameservers:              []NameServer{ns},
 		maxAuthenticationDepth:   3,
 		RemotelyAuthenticateData: false,
@@ -180,7 +180,7 @@ func TestAuthenticateSignatureKeyMissMatch(t *testing.T) {
 
 	ns.prepFullChain()
 
-	d := &DnsLookup{
+	d := &Resolver{
 		nameservers:              []NameServer{ns},
 		maxAuthenticationDepth:   3,
 		RemotelyAuthenticateData: false,

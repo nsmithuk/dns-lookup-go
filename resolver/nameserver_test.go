@@ -1,4 +1,4 @@
-package lookup
+package resolver
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ func (m *MockDNSClient) Exchange(msg *dns.Msg, address string) (*dns.Msg, time.D
 func TestNewUdpNameserver(t *testing.T) {
 	address := "127.0.0.1"
 	port := "53"
-	ns := NewUdpNameserver(address, port).(*NameServerConcrete)
+	ns := NewUdpNameserver(address, port).(*LookupNameserver)
 
 	if ns.protocol != udp {
 		t.Errorf("expected protocol %v, got %v", udp, ns.protocol)
@@ -44,7 +44,7 @@ func TestNewUdpNameserver(t *testing.T) {
 func TestNewTcpNameserver(t *testing.T) {
 	address := "127.0.0.1"
 	port := "53"
-	ns := NewTcpNameserver(address, port).(*NameServerConcrete)
+	ns := NewTcpNameserver(address, port).(*LookupNameserver)
 
 	if ns.protocol != tcp {
 		t.Errorf("expected protocol %v, got %v", tcp, ns.protocol)
@@ -61,7 +61,7 @@ func TestNewTlsNameserver(t *testing.T) {
 	address := "127.0.0.1"
 	port := "853"
 	domain := "example.com"
-	ns := NewTlsNameserver(address, port, domain).(*NameServerConcrete)
+	ns := NewTlsNameserver(address, port, domain).(*LookupNameserver)
 
 	if ns.protocol != tcpTls {
 		t.Errorf("expected protocol %v, got %v", tcpTls, ns.protocol)
@@ -89,25 +89,25 @@ func TestNameServer_String(t *testing.T) {
 }
 
 func TestNameServer_getAddress(t *testing.T) {
-	ns := NewUdpNameserver("127.0.0.1", "53").(*NameServerConcrete)
+	ns := NewUdpNameserver("127.0.0.1", "53").(*LookupNameserver)
 	if ns.getAddress() != "127.0.0.1" {
 		t.Errorf("expected %v, got %v", "127.0.0.1", ns.getAddress())
 	}
 
-	ns6 := NewUdpNameserver("::1", "53").(*NameServerConcrete)
+	ns6 := NewUdpNameserver("::1", "53").(*LookupNameserver)
 	if ns6.getAddress() != "[::1]" {
 		t.Errorf("expected %v, got %v", "[::1]", ns6.getAddress())
 	}
 }
 
 func TestNameServer_getConnectionString(t *testing.T) {
-	ns := NewUdpNameserver("127.0.0.1", "53").(*NameServerConcrete)
+	ns := NewUdpNameserver("127.0.0.1", "53").(*LookupNameserver)
 	expected := "127.0.0.1:53"
 	if ns.getConnectionString() != expected {
 		t.Errorf("expected %v, got %v", expected, ns.getConnectionString())
 	}
 
-	ns6 := NewUdpNameserver("::1", "53").(*NameServerConcrete)
+	ns6 := NewUdpNameserver("::1", "53").(*LookupNameserver)
 	expected6 := "[::1]:53"
 	if ns6.getConnectionString() != expected6 {
 		t.Errorf("expected %v, got %v", expected6, ns6.getConnectionString())
@@ -115,12 +115,12 @@ func TestNameServer_getConnectionString(t *testing.T) {
 }
 
 func TestNameServer_isIPv6(t *testing.T) {
-	ns := NewUdpNameserver("127.0.0.1", "53").(*NameServerConcrete)
+	ns := NewUdpNameserver("127.0.0.1", "53").(*LookupNameserver)
 	if ns.isIPv6() {
 		t.Errorf("expected false for IPv4 address, got true")
 	}
 
-	ns6 := NewUdpNameserver("::1", "53").(*NameServerConcrete)
+	ns6 := NewUdpNameserver("::1", "53").(*LookupNameserver)
 	if !ns6.isIPv6() {
 		t.Errorf("expected true for IPv6 address, got false")
 	}
@@ -144,7 +144,7 @@ func TestNameServer_Query(t *testing.T) {
 		{
 			name:                  "Successful query",
 			rrtype:                dns.TypeA,
-			nameserver:            &NameServerConcrete{protocol: udp, address: "8.8.8.8", port: "53", client: &MockDNSClient{response: newNameserverResponseMsgWithAD(dns.RcodeSuccess, true), rtt: mockRtt, err: nil}},
+			nameserver:            &LookupNameserver{protocol: udp, address: "8.8.8.8", port: "53", client: &MockDNSClient{response: newNameserverResponseMsgWithAD(dns.RcodeSuccess, true), rtt: mockRtt, err: nil}},
 			mockResponse:          newNameserverResponseMsgWithAD(dns.RcodeSuccess, true),
 			mockRtt:               mockRtt,
 			expectedErr:           "",
@@ -161,7 +161,7 @@ func TestNameServer_Query(t *testing.T) {
 		{
 			name:                  "Query error with rcode",
 			rrtype:                dns.TypeA,
-			nameserver:            &NameServerConcrete{protocol: udp, address: "8.8.8.8", port: "53", client: &MockDNSClient{response: newNameserverResponseMsgWithAD(dns.RcodeNameError, true), rtt: mockRtt, err: nil}},
+			nameserver:            &LookupNameserver{protocol: udp, address: "8.8.8.8", port: "53", client: &MockDNSClient{response: newNameserverResponseMsgWithAD(dns.RcodeNameError, true), rtt: mockRtt, err: nil}},
 			mockResponse:          newNameserverResponseMsgWithAD(dns.RcodeNameError, true),
 			mockRtt:               mockRtt,
 			expectedErr:           "query error returned (rcode 3)",
@@ -172,7 +172,7 @@ func TestNameServer_Query(t *testing.T) {
 		{
 			name:                  "Exchange error",
 			rrtype:                dns.TypeA,
-			nameserver:            &NameServerConcrete{protocol: udp, address: "8.8.8.8", port: "53", client: &MockDNSClient{response: nil, rtt: mockRtt, err: fmt.Errorf("network error")}},
+			nameserver:            &LookupNameserver{protocol: udp, address: "8.8.8.8", port: "53", client: &MockDNSClient{response: nil, rtt: mockRtt, err: fmt.Errorf("network error")}},
 			mockResponse:          nil,
 			mockRtt:               mockRtt,
 			mockErr:               fmt.Errorf("network error"),
@@ -185,7 +185,7 @@ func TestNameServer_Query(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.nameserver != nil {
-				tt.nameserver.(*NameServerConcrete).client = &MockDNSClient{
+				tt.nameserver.(*LookupNameserver).client = &MockDNSClient{
 					response: tt.mockResponse,
 					rtt:      tt.mockRtt,
 					err:      tt.mockErr,
@@ -204,17 +204,17 @@ func TestNameServer_Query(t *testing.T) {
 				}
 
 				assert.Equal(t, tt.mockRtt, rtt)
-				require.NotNil(t, tt.nameserver.(*NameServerConcrete).client.(*MockDNSClient).lastMsg)
-				assert.Equal(t, tt.expectedQuery.Question, tt.nameserver.(*NameServerConcrete).client.(*MockDNSClient).lastMsg.Question)
+				require.NotNil(t, tt.nameserver.(*LookupNameserver).client.(*MockDNSClient).lastMsg)
+				assert.Equal(t, tt.expectedQuery.Question, tt.nameserver.(*LookupNameserver).client.(*MockDNSClient).lastMsg.Question)
 
 				// Check if SetEdns0(4096, true) was called
-				edns0 := tt.nameserver.(*NameServerConcrete).client.(*MockDNSClient).lastMsg.IsEdns0()
+				edns0 := tt.nameserver.(*LookupNameserver).client.(*MockDNSClient).lastMsg.IsEdns0()
 				require.NotNil(t, edns0)
 				assert.Equal(t, uint16(4096), edns0.UDPSize())
 				assert.True(t, edns0.Do())
 
 				// Check if RecursionDesired is set to true
-				assert.True(t, tt.nameserver.(*NameServerConcrete).client.(*MockDNSClient).lastMsg.RecursionDesired)
+				assert.True(t, tt.nameserver.(*LookupNameserver).client.(*MockDNSClient).lastMsg.RecursionDesired)
 
 				// Check if AuthenticatedData is set correctly
 				if tt.mockResponse != nil {

@@ -1,4 +1,4 @@
-package lookup
+package resolver
 
 import (
 	"crypto/tls"
@@ -32,8 +32,8 @@ type NameServer interface {
 	String() string
 }
 
-// NameServerConcrete represents the details of a DNS name server, including protocol, address, port, and client.
-type NameServerConcrete struct {
+// LookupNameserver represents the details of a DNS name server, including protocol, address, port, and client.
+type LookupNameserver struct {
 	protocol protocol  // Connection protocol: udp, tcp, or tcp-tls
 	domain   string    // Domain name for TLS certificate verification
 	address  string    // IP address of the name server
@@ -41,9 +41,9 @@ type NameServerConcrete struct {
 	client   DNSClient // DNS client for sending queries
 }
 
-// NewUdpNameserver creates a NameServerConcrete instance using UDP protocol.
+// NewUdpNameserver creates a LookupNameserver instance using UDP protocol.
 func NewUdpNameserver(address, port string) NameServer {
-	return &NameServerConcrete{
+	return &LookupNameserver{
 		protocol: udp,
 		address:  address,
 		port:     port,
@@ -53,9 +53,9 @@ func NewUdpNameserver(address, port string) NameServer {
 	}
 }
 
-// NewTcpNameserver creates a NameServerConcrete instance using TCP protocol.
+// NewTcpNameserver creates a LookupNameserver instance using TCP protocol.
 func NewTcpNameserver(address, port string) NameServer {
-	return &NameServerConcrete{
+	return &LookupNameserver{
 		protocol: tcp,
 		address:  address,
 		port:     port,
@@ -65,10 +65,10 @@ func NewTcpNameserver(address, port string) NameServer {
 	}
 }
 
-// NewTlsNameserver creates a NameServerConcrete instance using TCP over TLS protocol.
+// NewTlsNameserver creates a LookupNameserver instance using TCP over TLS protocol.
 // The domain parameter is required for TLS certificate verification.
 func NewTlsNameserver(address, port, domain string) NameServer {
-	return &NameServerConcrete{
+	return &LookupNameserver{
 		protocol: tcpTls,
 		address:  address,
 		port:     port,
@@ -82,8 +82,8 @@ func NewTlsNameserver(address, port, domain string) NameServer {
 	}
 }
 
-// String returns a human-readable string representation of the NameServerConcrete details.
-func (n NameServerConcrete) String() string {
+// String returns a human-readable string representation of the LookupNameserver details.
+func (n LookupNameserver) String() string {
 	details := fmt.Sprintf("%s://%s", n.protocol, n.getConnectionString())
 	if n.domain != "" {
 		details = fmt.Sprintf("%s#%s", details, n.domain)
@@ -91,26 +91,26 @@ func (n NameServerConcrete) String() string {
 	return details
 }
 
-// getAddress returns the IP address of the NameServerConcrete, formatted for IPv4 or IPv6.
-func (n NameServerConcrete) getAddress() string {
+// getAddress returns the IP address of the LookupNameserver, formatted for IPv4 or IPv6.
+func (n LookupNameserver) getAddress() string {
 	if n.isIPv6() {
 		return fmt.Sprintf("[%s]", n.address)
 	}
 	return n.address
 }
 
-// getConnectionString returns the connection string (address:port) of the NameServerConcrete.
-func (n NameServerConcrete) getConnectionString() string {
+// getConnectionString returns the connection string (address:port) of the LookupNameserver.
+func (n LookupNameserver) getConnectionString() string {
 	return fmt.Sprintf("%s:%s", n.getAddress(), n.port)
 }
 
-// isIPv6 checks if the NameServerConcrete address is IPv6.
-func (n NameServerConcrete) isIPv6() bool {
+// isIPv6 checks if the LookupNameserver address is IPv6.
+func (n LookupNameserver) isIPv6() bool {
 	return strings.Count(n.address, ":") >= 2
 }
 
-// Query sends a DNS query to the NameServerConcrete.
-func (n NameServerConcrete) Query(name string, rrtype uint16) (*dns.Msg, time.Duration, error) {
+// Query sends a DNS query to the LookupNameserver.
+func (n LookupNameserver) Query(name string, rrtype uint16) (*dns.Msg, time.Duration, error) {
 	msg := new(dns.Msg)
 	msg.SetQuestion(dns.Fqdn(name), rrtype)
 	msg.SetEdns0(4096, true)

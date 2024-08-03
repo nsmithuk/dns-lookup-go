@@ -26,7 +26,7 @@ See [Supplying the Trust Anchors](#supplying-the-trust-anchors) below for detail
 
 To install the package, use:
 ```bash
-go get github.com/nsmithuk/dns-lookup-go
+go get github.com/nsmithuk/dns-resolver-go
 ```
 
 ## Basic Usage
@@ -37,29 +37,29 @@ Here is an example of how to use DNS Lookup to perform a basic DNS A record look
 package main
 
 import (
-    "fmt"
-    "github.com/nsmithuk/dns-lookup-go/lookup"
-    "log"
+	"fmt"
+	"github.com/nsmithuk/dns-lookup-go/resolver"
+	"log"
 )
 
 func main() {
-    
-    client := lookup.NewDnsLookup([]lookup.NameServer{
-        lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
-    })
-    
-    //---
-    
-    answers, err := client.QueryA("nsmith.net")
-    if err != nil {
-        // If DNSSEC validation fails, an error is returned.
-        log.Fatalln(err)
-    }
-    
-    fmt.Printf("%d answers found\n", len(answers))
-    for i, answer := range answers {
-        fmt.Printf("answer %d: %s\n", i, answer.String())
-    }
+
+	client := lookup.NewDnsLookup([]lookup.NameServer{
+		lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
+	})
+
+	//---
+
+	answers, err := client.QueryA("nsmith.net")
+	if err != nil {
+		// If DNSSEC validation fails, an error is returned.
+		log.Fatalln(err)
+	}
+
+	fmt.Printf("%d answers found\n", len(answers))
+	for i, answer := range answers {
+		fmt.Printf("answer %d: %s\n", i, answer.String())
+	}
 
 }
 ```
@@ -77,37 +77,36 @@ When you set more than one nameserver:
 - If a query fails to resolve on one server, it will be tried against all nameservers, and an error is returned if none succeed.
 - The order in which the servers are selected is randomized per query to help balance load across them.
 
-
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/nsmithuk/dns-lookup-go/lookup"
-    "log"
+	"fmt"
+	"github.com/nsmithuk/dns-lookup-go/resolver"
+	"log"
 )
 
 func main() {
 
-    client := lookup.NewDnsLookup([]lookup.NameServer{
-        lookup.NewUdpNameserver("1.1.1.1", "53"), // Unencrypted UDP example
-        lookup.NewTcpNameserver("1.1.1.1", "53"), // Unencrypted TCP example
-        lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"), // Encrypted TCP example
-        lookup.NewTlsNameserver("2606:4700:4700::1111", "853", "one.one.one.one"), // Encrypted TCP example over IPv6
-    })
-    
-    //---
-    
-    answers, err := client.QueryA("nsmith.net")
-    if err != nil {
-        // If DNSSEC validation fails, an error is returned.
-        log.Fatalln(err)
-    }
-    
-    fmt.Printf("%d answers found\n", len(answers))
-    for i, answer := range answers {
-        fmt.Printf("answer %d: %s\n", i, answer.String())
-    }
+	client := lookup.NewDnsLookup([]lookup.NameServer{
+		lookup.NewUdpNameserver("1.1.1.1", "53"),                                  // Unencrypted UDP example
+		lookup.NewTcpNameserver("1.1.1.1", "53"),                                  // Unencrypted TCP example
+		lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),              // Encrypted TCP example
+		lookup.NewTlsNameserver("2606:4700:4700::1111", "853", "one.one.one.one"), // Encrypted TCP example over IPv6
+	})
+
+	//---
+
+	answers, err := client.QueryA("nsmith.net")
+	if err != nil {
+		// If DNSSEC validation fails, an error is returned.
+		log.Fatalln(err)
+	}
+
+	fmt.Printf("%d answers found\n", len(answers))
+	for i, answer := range answers {
+		fmt.Printf("answer %d: %s\n", i, answer.String())
+	}
 
 }
 ```
@@ -120,40 +119,40 @@ To supply your own copy of the trust anchors.
 package main
 
 import (
-    "fmt"
-    "github.com/nsmithuk/dns-anchors-go/anchors"
-    "github.com/nsmithuk/dns-lookup-go/lookup"
-    "log"
+	"fmt"
+	"github.com/nsmithuk/dns-anchors-go/anchors"
+	"github.com/nsmithuk/dns-lookup-go/resolver"
+	"log"
 )
 
 func main() {
 
-    client := lookup.NewDnsLookup([]lookup.NameServer{
-        lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
-    })
-    
-    //---
-    
-    records, err := anchors.GetValidFromFile("root-anchors.xml")
-    if err != nil {
-        // Failed to load or parse the root anchors.
-        log.Fatalln(err)
-    }
-    
-    client.RootDNSSECRecords = records
-    
-    //---
-    
-    answers, err := client.QueryA("nsmith.net")
-    if err != nil {
-        // If DNSSEC validation fails, an error is returned.
-        log.Fatalln(err)
-    }
-    
-    fmt.Printf("%d answers found\n", len(answers))
-    for i, answer := range answers {
-        fmt.Printf("answer %d: %s\n", i, answer.String())
-    }
+	client := lookup.NewDnsLookup([]lookup.NameServer{
+		lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
+	})
+
+	//---
+
+	records, err := anchors.GetValidFromFile("root-anchors.xml")
+	if err != nil {
+		// Failed to load or parse the root anchors.
+		log.Fatalln(err)
+	}
+
+	client.RootDNSSECRecords = records
+
+	//---
+
+	answers, err := client.QueryA("nsmith.net")
+	if err != nil {
+		// If DNSSEC validation fails, an error is returned.
+		log.Fatalln(err)
+	}
+
+	fmt.Printf("%d answers found\n", len(answers))
+	for i, answer := range answers {
+		fmt.Printf("answer %d: %s\n", i, answer.String())
+	}
 
 }
 
@@ -168,46 +167,47 @@ You're able to examine the returned object yourself. Or you can make use of the 
 package which supports pretty printing.
 
 ### Example
+
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/nsmithuk/dns-lookup-go-trace/trace"
-    "github.com/nsmithuk/dns-lookup-go/lookup"
-    "log"
+	"fmt"
+	"github.com/nsmithuk/dns-lookup-go-trace/trace"
+	"github.com/nsmithuk/dns-lookup-go/resolver"
+	"log"
 )
 
 func main() {
 
-    client := lookup.NewDnsLookup([]lookup.NameServer{
-        lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
-    })
-    
-    //---
-    
-    // Enable validation tracing on the client
-    client.EnableTrace = true
-    
-    answers, err := client.QueryA("nsmith.net")
-    if err != nil {
-        // If DNSSEC validation fails, an error is returned.
-        log.Fatalln(err)
-    }
-    
-    fmt.Printf("%d answers found\n", len(answers))
-    for i, answer := range answers {
-        fmt.Printf("answer %d: %s\n", i, answer.String())
-    }
-    
-    //---
-    
-    // Return the trace from the client
-    // You can manually inspect its properties to see what happened.
-    t := client.Trace
-    
-    // And/or you can use the `trace` package to pretty print it to the console.
-    fmt.Println(trace.GetConsoleTree(t))
+	client := lookup.NewDnsLookup([]lookup.NameServer{
+		lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
+	})
+
+	//---
+
+	// Enable validation tracing on the client
+	client.EnableTrace = true
+
+	answers, err := client.QueryA("nsmith.net")
+	if err != nil {
+		// If DNSSEC validation fails, an error is returned.
+		log.Fatalln(err)
+	}
+
+	fmt.Printf("%d answers found\n", len(answers))
+	for i, answer := range answers {
+		fmt.Printf("answer %d: %s\n", i, answer.String())
+	}
+
+	//---
+
+	// Return the trace from the client
+	// You can manually inspect its properties to see what happened.
+	t := client.Trace
+
+	// And/or you can use the `trace` package to pretty print it to the console.
+	fmt.Println(trace.GetConsoleTree(t))
 }
 
 ```
