@@ -44,8 +44,8 @@ import (
 
 func main() {
 
-	client := lookup.NewDnsLookup([]lookup.NameServer{
-		lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
+	client := resolver.NewResolver([]resolver.NameServer{
+		resolver.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
 	})
 
 	//---
@@ -88,11 +88,11 @@ import (
 
 func main() {
 
-	client := lookup.NewDnsLookup([]lookup.NameServer{
-		lookup.NewUdpNameserver("1.1.1.1", "53"),                                  // Unencrypted UDP example
-		lookup.NewTcpNameserver("1.1.1.1", "53"),                                  // Unencrypted TCP example
-		lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),              // Encrypted TCP example
-		lookup.NewTlsNameserver("2606:4700:4700::1111", "853", "one.one.one.one"), // Encrypted TCP example over IPv6
+	client := resolver.NewResolver([]resolver.NameServer{
+		resolver.NewUdpNameserver("1.1.1.1", "53"),                                  // Unencrypted UDP example
+		resolver.NewTcpNameserver("1.1.1.1", "53"),                                  // Unencrypted TCP example
+		resolver.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),              // Encrypted TCP example
+		resolver.NewTlsNameserver("2606:4700:4700::1111", "853", "one.one.one.one"), // Encrypted TCP example over IPv6
 	})
 
 	//---
@@ -127,8 +127,8 @@ import (
 
 func main() {
 
-	client := lookup.NewDnsLookup([]lookup.NameServer{
-		lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
+	client := resolver.NewResolver([]resolver.NameServer{
+		resolver.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
 	})
 
 	//---
@@ -180,8 +180,8 @@ import (
 
 func main() {
 
-	client := lookup.NewDnsLookup([]lookup.NameServer{
-		lookup.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
+	client := resolver.NewResolver([]resolver.NameServer{
+		resolver.NewTlsNameserver("1.1.1.1", "853", "one.one.one.one"),
 	})
 
 	//---
