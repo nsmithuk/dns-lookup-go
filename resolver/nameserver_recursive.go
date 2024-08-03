@@ -15,7 +15,7 @@ import (
 type RecursiveNameserver struct {
 	rootZoneResolver *zoneResolver
 	maxQueryCount    uint8
-	Trace            *Trace
+	Trace            *AuthenticationTrace
 	EnableTrace      bool
 	factory          func(address, port string) NameServer
 }
@@ -42,7 +42,7 @@ func (n *RecursiveNameserver) Query(name string, rrtype uint16) (*dns.Msg, time.
 	ctx := context.Background()
 
 	if n.EnableTrace {
-		n.Trace = new(Trace)
+		n.Trace = new(AuthenticationTrace)
 		ctx = context.WithValue(ctx, contextTrace, n.Trace)
 	}
 
@@ -188,8 +188,8 @@ func (z *zoneResolver) queryNameserver(nsHostname string, ns NameServer, name st
 
 	//---
 
-	if trace, ok := ctx.Value(contextTrace).(*Trace); ok {
-		trace.Add(newtTraceLookup(name, rrtype, nsHostname, duration, msg.Answer))
+	if trace, ok := ctx.Value(contextTrace).(*AuthenticationTrace); ok {
+		trace.Add(newAuthenticationTraceLookup(name, rrtype, nsHostname, duration, msg.Answer))
 	}
 
 	if len(msg.Answer) > 0 {

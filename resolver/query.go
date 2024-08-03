@@ -20,7 +20,7 @@ type Resolver struct {
 	RemotelyAuthenticateData bool
 	RandomNameserver         bool
 	maxAuthenticationDepth   uint8
-	Trace                    *Trace
+	Trace                    *AuthenticationTrace
 	EnableTrace              bool
 }
 
@@ -50,7 +50,7 @@ func (d *Resolver) Query(name string, rrtype uint16) (*dns.Msg, time.Duration, e
 	ctx := context.Background()
 
 	if d.EnableTrace {
-		d.Trace = new(Trace)
+		d.Trace = new(AuthenticationTrace)
 		ctx = context.WithValue(ctx, contextTrace, d.Trace)
 	}
 
@@ -120,8 +120,8 @@ func (d *Resolver) query(name string, rrtype uint16, ctx context.Context) (*dns.
 
 		//---
 
-		if trace, ok := ctx.Value(contextTrace).(*Trace); ok {
-			trace.Add(newtTraceLookup(name, rrtype, nameserver.String(), duration, result.Answer))
+		if trace, ok := ctx.Value(contextTrace).(*AuthenticationTrace); ok {
+			trace.Add(newAuthenticationTraceLookup(name, rrtype, nameserver.String(), duration, result.Answer))
 		}
 
 		//--

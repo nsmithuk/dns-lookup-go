@@ -6,20 +6,20 @@ import (
 	"time"
 )
 
-type Trace struct {
-	Records []traceRecord
+type AuthenticationTrace struct {
+	Records []authenticationTraceRecord
 }
 
-func (t *Trace) Add(r traceRecord) {
+func (t *AuthenticationTrace) Add(r authenticationTraceRecord) {
 	if t.Records == nil {
-		t.Records = make([]traceRecord, 0)
+		t.Records = make([]authenticationTraceRecord, 0)
 	}
 	t.Records = append(t.Records, r)
 }
 
-type traceRecord interface{}
+type authenticationTraceRecord interface{}
 
-type TraceLookup struct {
+type AuthenticationTraceLookup struct {
 	Domain     string
 	Rrtype     string
 	Nameserver string
@@ -27,8 +27,8 @@ type TraceLookup struct {
 	Answers    []string
 }
 
-func newtTraceLookup(domain string, rrtype uint16, nameserver string, latency time.Duration, answers []dns.RR) TraceLookup {
-	return TraceLookup{
+func newAuthenticationTraceLookup(domain string, rrtype uint16, nameserver string, latency time.Duration, answers []dns.RR) AuthenticationTraceLookup {
+	return AuthenticationTraceLookup{
 		Domain:     domain,
 		Rrtype:     rrtypeToString(rrtype),
 		Nameserver: nameserver,
@@ -39,7 +39,7 @@ func newtTraceLookup(domain string, rrtype uint16, nameserver string, latency ti
 
 //---
 
-type TraceSignatureValidation struct {
+type AuthenticationTraceSignatureValidation struct {
 	Depth     uint8
 	KeyType   string
 	Domain    string
@@ -53,8 +53,8 @@ type TraceSignatureValidation struct {
 	Valid     bool
 }
 
-func newTraceSignatureValidation(depth uint8, domain, zone, keyType string, key *dns.DNSKEY, signature *dns.RRSIG, records []dns.RR, err error) TraceSignatureValidation {
-	return TraceSignatureValidation{
+func newAuthenticationTraceSignatureValidation(depth uint8, domain, zone, keyType string, key *dns.DNSKEY, signature *dns.RRSIG, records []dns.RR, err error) AuthenticationTraceSignatureValidation {
+	return AuthenticationTraceSignatureValidation{
 		Depth:     depth,
 		Domain:    domain,
 		Zone:      zone,
@@ -71,15 +71,15 @@ func newTraceSignatureValidation(depth uint8, domain, zone, keyType string, key 
 
 //---
 
-type TraceDelegationSignerCheck struct {
+type AuthenticationTraceDelegationSignerCheck struct {
 	Depth  uint8
 	Child  string
 	Parent string
 	Hash   string
 }
 
-func newTraceDelegationSignerCheck(depth uint8, child, parent, hash string) TraceDelegationSignerCheck {
-	return TraceDelegationSignerCheck{
+func newAuthenticationTraceDelegationSignerCheck(depth uint8, child, parent, hash string) AuthenticationTraceDelegationSignerCheck {
+	return AuthenticationTraceDelegationSignerCheck{
 		Depth:  depth,
 		Child:  child,
 		Parent: parent,

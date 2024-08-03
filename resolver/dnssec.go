@@ -161,8 +161,8 @@ func (d *Resolver) Authenticate(msg *dns.Msg, ctx context.Context) error {
 					logger.Info().
 						Str("digest", answer.Digest).
 						Msg("Key Signing Key authenticated at root.")
-					if trace, ok := ctx.Value(contextTrace).(*Trace); ok {
-						trace.Add(newTraceDelegationSignerCheck(depth, msg.Question[0].Name, kss.signature.SignerName, keyDS.Digest))
+					if trace, ok := ctx.Value(contextTrace).(*AuthenticationTrace); ok {
+						trace.Add(newAuthenticationTraceDelegationSignerCheck(depth, msg.Question[0].Name, kss.signature.SignerName, keyDS.Digest))
 					}
 					return nil
 				}
@@ -189,8 +189,8 @@ func (d *Resolver) Authenticate(msg *dns.Msg, ctx context.Context) error {
 						Str("digest", answer.Digest).
 						Str("zone", kss.signature.SignerName).
 						Msg("Key Signing Key authenticated at parent. Next authenticating parent's zone.")
-					if trace, ok := ctx.Value(contextTrace).(*Trace); ok {
-						trace.Add(newTraceDelegationSignerCheck(depth, msg.Question[0].Name, kss.signature.SignerName, keyDS.Digest))
+					if trace, ok := ctx.Value(contextTrace).(*AuthenticationTrace); ok {
+						trace.Add(newAuthenticationTraceDelegationSignerCheck(depth, msg.Question[0].Name, kss.signature.SignerName, keyDS.Digest))
 					}
 					return d.Authenticate(dsMsg, context.WithValue(ctx, contextDepth, depth+1))
 				}
@@ -246,9 +246,9 @@ func (d *Resolver) authenticateZoneSigningKey(msg *dns.Msg, ctx context.Context)
 		// Verify the signature with the ZSK
 		err = zss.verify()
 
-		if trace, ok := ctx.Value(contextTrace).(*Trace); ok {
+		if trace, ok := ctx.Value(contextTrace).(*AuthenticationTrace); ok {
 			trace.Add(
-				newTraceSignatureValidation(depth, msg.Question[0].Name, zss.signature.SignerName, "zsk", zss.key, zss.signature, zss.records, err),
+				newAuthenticationTraceSignatureValidation(depth, msg.Question[0].Name, zss.signature.SignerName, "zsk", zss.key, zss.signature, zss.records, err),
 			)
 		}
 
@@ -283,9 +283,9 @@ func (d *Resolver) authenticateZoneSigningKey(msg *dns.Msg, ctx context.Context)
 			// Verify the signature with the KSK
 			err = kss.verify()
 
-			if trace, ok := ctx.Value(contextTrace).(*Trace); ok {
+			if trace, ok := ctx.Value(contextTrace).(*AuthenticationTrace); ok {
 				trace.Add(
-					newTraceSignatureValidation(depth, msg.Question[0].Name, kss.signature.SignerName, "ksk", kss.key, kss.signature, kss.records, err),
+					newAuthenticationTraceSignatureValidation(depth, msg.Question[0].Name, kss.signature.SignerName, "ksk", kss.key, kss.signature, kss.records, err),
 				)
 			}
 
