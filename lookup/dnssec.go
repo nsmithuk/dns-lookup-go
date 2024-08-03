@@ -17,9 +17,10 @@ const (
 type contextKey string
 
 const (
-	contextTrace  contextKey = "trace"  // Context key for recursion depth
-	contextDepth  contextKey = "depth"  // Context key for recursion depth
-	initialDomain contextKey = "domain" // Context key for the initial domain
+	contextTrace    contextKey = "trace"     // Context key for recursion depth
+	contextDepth    contextKey = "depth"     // Context key for recursion depth
+	contextDepthMax contextKey = "max-depth" // Context key for max recursion depth
+	initialDomain   contextKey = "domain"    // Context key for the initial domain
 )
 
 // SignatureSets represents a collection of SignatureSet pointers
