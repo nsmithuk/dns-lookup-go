@@ -23,7 +23,7 @@ type RecursiveNameserver struct {
 func NewRecursiveNameserver() *RecursiveNameserver {
 	rns := &RecursiveNameserver{
 		rootZoneResolver: newRootZoneResolver(),
-		maxQueryCount:    20,
+		maxQueryCount:    30,
 		EnableTrace:      false,
 		factory: func(address, port string) NameServer {
 			return NewUdpNameserver(address, port)
@@ -46,20 +46,37 @@ func (n *RecursiveNameserver) Query(name string, rrtype uint16) (*dns.Msg, time.
 		ctx = context.WithValue(ctx, contextTrace, n.Trace)
 	}
 
-	msg, err := n.rootZoneResolver.query(name, rrtype, ctx)
+	var queryCounter uint8
+
+	msg, err := n.rootZoneResolver.query(name, rrtype, ctx, &queryCounter)
 
 	return msg, time.Since(start), err
 }
 
 //-------------------------------------------------------------------------------------
+// Error Setup
+
+var ErrMaxDepth = NewHardError("max allowed recursion depth reached")
+
+// HardError implies that we should stop all attempts to continue.
+// 'Normal' errors may result in more nameservers being tried.
+type HardError struct {
+	s string
+}
+
+func NewHardError(s string) error {
+	return &HardError{s: s}
+}
+
+func (e *HardError) Error() string {
+	return e.s
+}
+
+// An instance of a HardError to be referenced
+var hardError *HardError
+
+//-------------------------------------------------------------------------------------
 // zoneResolver
-
-var ErrMaxDepth = errors.New("max allowed recursion depth reached")
-
-const (
-	contextQueryCount    contextKey = "count"
-	contextMaxQueryCount contextKey = "max-count"
-)
 
 type zoneResolver struct {
 	server *RecursiveNameserver // set only on the root
@@ -114,29 +131,17 @@ func (z *zoneResolver) getRecursiveNameserver() *RecursiveNameserver {
 	return z.getRootZoneResolver().server
 }
 
-func (z *zoneResolver) query(name string, rrtype uint16, ctx context.Context) (*dns.Msg, error) {
-	// Retrieve the count from the context, default to 0 if not found
-	count, _ := ctx.Value(contextQueryCount).(uint8)
-
-	if count > z.getRecursiveNameserver().maxQueryCount {
-		return nil, ErrMaxDepth
-	}
-
-	// Bump the count by one for the next call.
-	ctx = context.WithValue(ctx, contextQueryCount, count+1)
-
-	//--------------------------------------------
-
+func (z *zoneResolver) query(name string, rrtype uint16, ctx context.Context, queryCount *uint8) (*dns.Msg, error) {
 	name = strings.TrimRight(name, ".") + "." // Always ensure the name ends with a dot.
 
 	// First we try all nameservers that we already know the IP address of.
 	for hostname, ns := range z.nsA {
 		if ns != nil {
-			msg, err := z.queryNameserver(hostname, ns, name, rrtype, ctx)
+			msg, err := z.queryNameserver(hostname, ns, name, rrtype, ctx, queryCount)
 			if err == nil && len(msg.Answer) > 0 {
 				// If we found an answer, return
 				return msg, nil
-			} else if errors.Is(err, ErrMaxDepth) {
+			} else if errors.As(err, &hardError) {
 				return nil, err
 			}
 		}
@@ -148,10 +153,10 @@ func (z *zoneResolver) query(name string, rrtype uint16, ctx context.Context) (*
 	for hostname, ns := range z.nsA {
 		if ns == nil {
 			// Resolve NS IP
-			msg, err := z.getRootZoneResolver().query(hostname, dns.TypeA, ctx)
+			msg, err := z.getRootZoneResolver().query(hostname, dns.TypeA, ctx, queryCount)
 			if err != nil || len(msg.Answer) == 0 {
 				// We return on a max error depth
-				if errors.Is(err, ErrMaxDepth) {
+				if errors.As(err, &hardError) {
 					return nil, err
 				}
 				// Otherwise we continue to try the next nameserver
@@ -160,11 +165,11 @@ func (z *zoneResolver) query(name string, rrtype uint16, ctx context.Context) (*
 			// TODO: what to do if more than one IP address is returned?
 			z.nsA[hostname] = NewUdpNameserver(msg.Answer[0].(*dns.A).A.String(), "53")
 			//---
-			msg, err = z.queryNameserver(hostname, z.nsA[hostname], name, rrtype, ctx)
+			msg, err = z.queryNameserver(hostname, z.nsA[hostname], name, rrtype, ctx, queryCount)
 			if err == nil && len(msg.Answer) > 0 {
 				// If we found an answer, return
 				return msg, nil
-			} else if errors.Is(err, ErrMaxDepth) {
+			} else if errors.As(err, &hardError) {
 				return nil, err
 			}
 		}
@@ -176,8 +181,14 @@ func (z *zoneResolver) query(name string, rrtype uint16, ctx context.Context) (*
 	return nil, fmt.Errorf("unable to find answer")
 }
 
-func (z *zoneResolver) queryNameserver(nsHostname string, ns NameServer, name string, rrtype uint16, ctx context.Context) (*dns.Msg, error) {
+func (z *zoneResolver) queryNameserver(nsHostname string, ns NameServer, name string, rrtype uint16, ctx context.Context, queryCount *uint8) (*dns.Msg, error) {
 	depth, _ := ctx.Value(contextDepth).(uint8)
+
+	// Safety check to make sure we don't get into some silly loops.
+	if *queryCount > z.getRecursiveNameserver().maxQueryCount {
+		return nil, NewHardError(fmt.Sprintf("max allowed query count of %d reached. somthing has likely gone wrong", *queryCount))
+	}
+	*queryCount++
 
 	//---
 
@@ -189,12 +200,21 @@ func (z *zoneResolver) queryNameserver(nsHostname string, ns NameServer, name st
 	//---
 
 	if trace, ok := ctx.Value(contextTrace).(*RecursiveQueryTrace); ok {
-		trace.Add(newRecursiveQueryTraceLookup(depth, name, rrtype, nsHostname, ns.String(), duration, msg.Answer, msg.Ns, msg.Extra))
+		trace.Add(newRecursiveQueryTraceLookup(depth, name, rrtype, nsHostname, ns.String(), duration, msg))
 	}
+
+	//---
 
 	if len(msg.Answer) > 0 {
 		// If we found an answer, return
 		return msg, nil
+	}
+
+	//---
+
+	// If the answer is authoritative, but contained no records, then the desired record does not exist.
+	if msg.Authoritative {
+		return nil, NewHardError("record does not exist")
 	}
 
 	//---
@@ -218,7 +238,8 @@ func (z *zoneResolver) queryNameserver(nsHostname string, ns NameServer, name st
 			}
 		default:
 			// Ends up with things like RRSIG records in.
-			child.records = append(child.records, r)
+			// TODO: we don't use these, can we stop storing them.
+			//child.records = append(child.records, r)
 		}
 	}
 
@@ -228,7 +249,6 @@ func (z *zoneResolver) queryNameserver(nsHostname string, ns NameServer, name st
 			switch r := record.(type) {
 			case *dns.A:
 				if _, ok := child.nsA[r.Hdr.Name]; ok {
-					//child.nsA[r.Hdr.Name] = NewUdpNameserver(r.A.String(), "53")
 					child.nsA[r.Hdr.Name] = z.getRecursiveNameserver().factory(r.A.String(), "53")
 				}
 			}
@@ -241,11 +261,11 @@ func (z *zoneResolver) queryNameserver(nsHostname string, ns NameServer, name st
 	// TODO: this should always works, but might not always pick the best child first.
 	for childZoneName, child := range z.children {
 		if strings.HasSuffix(name, childZoneName) {
-			msg, err := child.query(name, rrtype, context.WithValue(ctx, contextDepth, depth+1))
+			msg, err := child.query(name, rrtype, context.WithValue(ctx, contextDepth, depth+1), queryCount)
 			if err == nil && len(msg.Answer) > 0 {
 				// If we found an answer, return
 				return msg, nil
-			} else if errors.Is(err, ErrMaxDepth) {
+			} else if errors.As(err, &hardError) {
 				return nil, err
 			}
 		}
